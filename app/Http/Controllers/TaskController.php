@@ -7,10 +7,18 @@ use App\Models\Task;
 
 class TaskController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        // 全タスクを取得
-        $tasks = Task::all();
+        $query = Task::query();
+
+        // フィルタリング処理
+        if ($request->filter === 'completed') {
+            $query->where('is_completed', true);
+        } elseif ($request->filter === 'incomplete') {
+            $query->where('is_completed', false);
+        }
+
+        $tasks = $query->get();
 
         // タスク一覧を表示
         return view('tasks.index', compact('tasks'));
@@ -77,5 +85,17 @@ class TaskController extends Controller
 
         // タスク一覧ページにリダイレクトし、削除メッセージを表示
         return redirect()->route('tasks.index')->with('success', 'タスクを削除しました。');
+    }
+
+    public function bulkDelete(Request $request)
+    {
+        // 選択されたタスクIDを取得
+        $taskIds = $request->input('tasks', []);
+
+        // 選択されたタスクを一括削除
+        Task::whereIn('id', $taskIds)->delete();
+
+        // タスク一覧ページにリダイレクトし、メッセージを表示
+        return redirect()->route('tasks.index')->with('success', '選択したタスクを削除しました。');
     }
 }
